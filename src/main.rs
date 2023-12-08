@@ -1,4 +1,5 @@
 mod day01;
+mod day04;
 mod day_minus_one;
 mod router;
 
