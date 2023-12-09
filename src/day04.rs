@@ -2,31 +2,22 @@ use axum::{extract, Json};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-pub struct Reindeer {
+pub struct StrengthReindeer {
     name: String,
     strength: u32,
-    speed: Option<f32>,
-    height: Option<u32>,
-    antler_width: Option<u32>,
-    snow_magic_power: Option<u32>,
-    favorite_food: Option<String>,
-    #[serde(rename = "cAnD13s_3ATeN-yesT3rdAy")]
-    candies_eaten_yesterday: Option<u32>,
 }
 
-impl Clone for Reindeer {
-    fn clone(&self) -> Reindeer {
-        Reindeer {
-            name: self.name.clone(),
-            strength: self.strength,
-            speed: self.speed,
-            height: self.height,
-            antler_width: self.antler_width,
-            snow_magic_power: self.snow_magic_power,
-            favorite_food: self.favorite_food.clone(),
-            candies_eaten_yesterday: self.candies_eaten_yesterday,
-        }
-    }
+#[derive(Deserialize)]
+pub struct ContestReindeer {
+    name: String,
+    strength: u32,
+    speed: f32,
+    height: u32,
+    antler_width: u32,
+    snow_magic_power: u32,
+    favorite_food: String,
+    #[serde(rename = "cAnD13s_3ATeN-yesT3rdAy")]
+    candies_eaten_yesterday: u32,
 }
 
 #[derive(Serialize)]
@@ -37,62 +28,54 @@ pub struct ContestResponse {
     consumer: String,
 }
 
-pub async fn strength(extract::Json(payload): extract::Json<Vec<Reindeer>>) -> String {
+pub async fn strength(extract::Json(payload): extract::Json<Vec<StrengthReindeer>>) -> String {
     let sum = payload.into_iter().fold(0, |sum, r| r.strength + sum);
     format!("{}", sum)
 }
 
 pub async fn contest(
-    extract::Json(payload): extract::Json<Vec<Reindeer>>,
+    extract::Json(payload): extract::Json<Vec<ContestReindeer>>,
 ) -> Json<ContestResponse> {
-    let mut fastest: Option<Reindeer> = None;
-    let mut tallest: Option<Reindeer> = None;
-    let mut magician: Option<Reindeer> = None;
-    let mut consumer: Option<Reindeer> = None;
+    let fastest = &payload
+        .iter()
+        .max_by(|a, b| a.speed.partial_cmp(&b.speed).unwrap())
+        .unwrap();
 
-    payload.into_iter().for_each(|r| {
-        if fastest.is_none() || &fastest.as_ref().unwrap().speed.unwrap() < &r.speed.unwrap() {
-            fastest = Some(r.clone());
-        }
+    let tallest = &payload
+        .iter()
+        .max_by(|a, b| a.height.partial_cmp(&b.height).unwrap())
+        .unwrap();
 
-        if tallest.is_none() || &tallest.as_ref().unwrap().height.unwrap() < &r.height.unwrap() {
-            tallest = Some(r.clone());
-        }
+    let magician = &payload
+        .iter()
+        .max_by(|a, b| a.snow_magic_power.partial_cmp(&b.snow_magic_power).unwrap())
+        .unwrap();
 
-        if magician.is_none()
-            || &magician.as_ref().unwrap().snow_magic_power.unwrap() < &r.snow_magic_power.unwrap()
-        {
-            magician = Some(r.clone());
-        }
-
-        if consumer.is_none()
-            || &consumer.as_ref().unwrap().candies_eaten_yesterday.unwrap()
-                < &r.candies_eaten_yesterday.unwrap()
-        {
-            consumer = Some(r.clone());
-        }
-    });
+    let consumer = &payload
+        .iter()
+        .max_by(|a, b| {
+            a.candies_eaten_yesterday
+                .partial_cmp(&b.candies_eaten_yesterday)
+                .unwrap()
+        })
+        .unwrap();
 
     Json(ContestResponse {
         fastest: format!(
             "Speeding past the finish line with a strength of {} is {}",
-            fastest.clone().unwrap().strength,
-            fastest.unwrap().name
+            fastest.strength, fastest.name
         ),
         tallest: format!(
             "{} is standing tall with his {} cm wide antlers",
-            tallest.clone().unwrap().name,
-            tallest.unwrap().antler_width.unwrap(),
+            tallest.name, tallest.antler_width
         ),
         magician: format!(
             "{} could blast you away with a snow magic power of {}",
-            magician.clone().unwrap().name,
-            magician.unwrap().snow_magic_power.unwrap(),
+            magician.name, magician.snow_magic_power
         ),
         consumer: format!(
             "{} ate lots of candies, but also some {}",
-            consumer.clone().unwrap().name,
-            consumer.unwrap().favorite_food.unwrap()
+            consumer.name, consumer.favorite_food
         ),
     })
 }
