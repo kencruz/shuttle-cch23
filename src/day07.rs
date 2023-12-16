@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use axum::{http::HeaderMap, Json};
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
@@ -10,39 +12,16 @@ pub struct CookieResponse {
     chocolate_chips: u32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct BakeRequest {
-    recipe: BakeRecipe,
-    pantry: BakeRecipe,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BakeRecipe {
-    flour: u32,
-    sugar: u32,
-    butter: u32,
-    #[serde(rename = "baking powder")]
-    baking_powder: u32,
-    #[serde(rename = "chocolate chips")]
-    chocolate_chips: u32,
+pub struct BakeRequest {
+    recipe: HashMap<String, u32>,
+    pantry: HashMap<String, u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BakeResponse {
     cookies: u32,
-    pantry: BakeRecipe,
-}
-
-impl BakeRecipe {
-    pub fn as_array(&self) -> [u32; 5] {
-        [
-            self.flour.clone(),
-            self.sugar.clone(),
-            self.butter.clone(),
-            self.baking_powder.clone(),
-            self.chocolate_chips.clone(),
-        ]
-    }
+    pantry: HashMap<String, u32>,
 }
 
 fn extract_cookie_value(headers: HeaderMap) -> String {
@@ -62,34 +41,36 @@ pub async fn cookies(headers: HeaderMap) -> Json<CookieResponse> {
 
 pub async fn bake(headers: HeaderMap) -> Json<BakeResponse> {
     let cookie = extract_cookie_value(headers);
-    let bake_request: BakeRequest = serde_json::from_str::<BakeRequest>(&cookie).unwrap();
+    let bake_request: BakeRequest = serde_json::from_str(&cookie).unwrap();
 
-    let (pantry, recipe) = (bake_request.pantry, bake_request.recipe);
-    let pantry_recipe_pair = std::iter::zip(pantry.as_array(), recipe.as_array());
+    let recipe = bake_request.recipe;
+    let mut pantry = bake_request.pantry;
+    let mut cookie_count = 0;
 
-    let cookie_count = pantry_recipe_pair.clone().fold(None, |acc, el| {
-        if acc.is_none() {
-            return Some(el.0 / el.1);
+    let mut break_loop = false;
+    while break_loop == false {
+        // check if there is enough ingredients for recipe, if not then break loop
+        for (k, v) in recipe.clone().drain() {
+            let pantry_stock = pantry.get(&k);
+            if pantry_stock.is_none() || pantry_stock.unwrap() < &v {
+                break_loop = true;
+                break;
+            }
+        }
+        if break_loop {
+            break;
         }
 
-        Some(acc.unwrap().min(el.0 / el.1))
-    });
+        // subtract the values from pantry and then add to cookie_count
+        for (k, v) in recipe.clone().drain() {
+            pantry.entry(k).and_modify(|e| *e -= v);
+        }
 
-    let remaining: [u32; 5] = pantry_recipe_pair
-        .map(|(p, r)| p - r * cookie_count.unwrap())
-        .collect::<Vec<u32>>()
-        .as_slice()
-        .try_into()
-        .unwrap();
+        cookie_count += 1;
+    }
 
     Json(BakeResponse {
-        cookies: cookie_count.unwrap(),
-        pantry: BakeRecipe {
-            flour: remaining[0],
-            sugar: remaining[1],
-            butter: remaining[2],
-            baking_powder: remaining[3],
-            chocolate_chips: remaining[4],
-        },
+        cookies: cookie_count,
+        pantry,
     })
 }
