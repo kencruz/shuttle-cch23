@@ -5,7 +5,7 @@ use crate::day01::exclusive_cube;
 use crate::day04::{contest, strength};
 use crate::day06::elf_on_a_shelf;
 use crate::day07::{bake, cookies};
-use crate::day08::weight;
+use crate::day08::{drop, weight};
 use crate::day_minus_one::make_error;
 
 async fn hello_world() -> &'static str {
@@ -22,7 +22,9 @@ pub fn create_api_router() -> Router {
     let day_seven = Router::new()
         .route("/decode", get(cookies))
         .route("/bake", get(bake));
-    let day_eight = Router::new().route("/weight/:num", get(weight));
+    let day_eight = Router::new()
+        .route("/weight/:num", get(weight))
+        .route("/drop/:num", get(drop));
 
     Router::new()
         .route("/", get(hello_world))
