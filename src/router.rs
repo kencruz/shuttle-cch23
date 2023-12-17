@@ -1,5 +1,6 @@
 use axum::routing::post;
 use axum::{routing::get, Router};
+use tower_http::services::ServeDir;
 
 use crate::day01::exclusive_cube;
 use crate::day04::{contest, strength};
@@ -25,6 +26,9 @@ pub fn create_api_router() -> Router {
     let day_eight = Router::new()
         .route("/weight/:num", get(weight))
         .route("/drop/:num", get(drop));
+    let day_eleven = Router::new()
+        .route("/", get(hello_world))
+        .nest_service("/assets", ServeDir::new("assets"));
 
     Router::new()
         .route("/", get(hello_world))
@@ -34,4 +38,5 @@ pub fn create_api_router() -> Router {
         .nest("/6", day_six)
         .nest("/7", day_seven)
         .nest("/8", day_eight)
+        .nest("/11", day_eleven)
 }
