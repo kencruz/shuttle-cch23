@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
 use axum::routing::post;
 use axum::{routing::get, Router};
 use tower_http::services::ServeDir;
@@ -8,13 +11,21 @@ use crate::day06::elf_on_a_shelf;
 use crate::day07::{bake, cookies};
 use crate::day08::{drop, weight};
 use crate::day11::red_pixels;
+use crate::day12::{load_packet, store_packet};
 use crate::day_minus_one::make_error;
 
 async fn hello_world() -> &'static str {
     "Hello, world!"
 }
 
+#[derive(Clone)]
+pub struct AppState {
+    pub record_last_updated: Arc<Mutex<HashMap<String, u64>>>,
+}
+
 pub fn create_api_router() -> Router {
+    let shared_state = AppState{ record_last_updated: Arc::new(Mutex::new(HashMap::new()))};
+
     let day_minus_one = Router::new().route("/error", get(make_error));
     let day_one = Router::new().route("/*nums", get(exclusive_cube));
     let day_four = Router::new()
@@ -30,6 +41,10 @@ pub fn create_api_router() -> Router {
     let day_eleven = Router::new()
         .route("/red_pixels", post(red_pixels))
         .nest_service("/assets", ServeDir::new("assets"));
+    let day_twelve = Router::new()
+        .route("/save/:packet", post(store_packet))
+        .route("/load/:packet", get(load_packet))
+        .with_state(shared_state);
 
     Router::new()
         .route("/", get(hello_world))
@@ -40,4 +55,5 @@ pub fn create_api_router() -> Router {
         .nest("/7", day_seven)
         .nest("/8", day_eight)
         .nest("/11", day_eleven)
+        .nest("/12", day_twelve)
 }

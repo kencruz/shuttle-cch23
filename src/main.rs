@@ -4,6 +4,7 @@ mod day06;
 mod day07;
 mod day08;
 mod day11;
+mod day12;
 mod day_minus_one;
 mod router;
 
