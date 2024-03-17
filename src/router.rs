@@ -8,7 +8,7 @@ use crate::days::day06::elf_on_a_shelf;
 use crate::days::day07::{bake, cookies};
 use crate::days::day08::{weight, drop};
 use crate::days::day11::red_pixels;
-use crate::days::day12::{load_packet, store_packet};
+use crate::days::day12::{load_packet, store_packet, ulids_to_uuids};
 use crate::days::day_minus_one::make_error;
 use crate::types::AppState;
 
@@ -36,6 +36,7 @@ pub fn create_api_router(shared_state: AppState) -> Router {
     let day_twelve = Router::new()
         .route("/save/:packet", post(store_packet))
         .route("/load/:packet", get(load_packet))
+        .route("/ulids", post(ulids_to_uuids))
         .with_state(shared_state);
 
     Router::new()

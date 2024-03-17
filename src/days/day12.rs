@@ -1,7 +1,9 @@
 use std::time::SystemTime;
 use std::collections::HashMap;
 
-use axum::extract::{Path, State};
+use axum::{extract::{self, Path, State}, Json};
+use ulid::Ulid;
+use uuid::Builder;
 use crate::types::AppState;
 
 pub async fn store_packet(Path(params): Path<HashMap<String, String>>, State(state): State<AppState>) {
@@ -29,3 +31,21 @@ pub async fn load_packet(Path(params): Path<HashMap<String, String>>, State(stat
 
     format!("{}", current_time - packet_time)
 }
+
+pub async fn ulids_to_uuids (extract::Json(payload): extract::Json<Vec<String>>) -> Json<Vec<String>> {
+    Json(
+        payload
+            .iter()
+            .map(|ulid| ulid_to_uuid(ulid))
+            .rev()
+            .collect::<Vec<String>>(),
+    )
+}
+
+fn ulid_to_uuid (s: &str) -> String {
+    let ulid = Ulid::from_string(s).unwrap();
+    let uuid = Builder::from_bytes(ulid.to_bytes());
+
+    uuid.as_uuid().to_string()
+}
+
