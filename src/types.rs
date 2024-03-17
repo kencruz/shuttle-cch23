@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -8,7 +11,7 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> AppState {
         AppState {
-            record_last_updated: Arc::new(Mutex::new(HashMap::new()))
+            record_last_updated: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }

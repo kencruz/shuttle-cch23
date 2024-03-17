@@ -6,7 +6,7 @@ use crate::days::day01::exclusive_cube;
 use crate::days::day04::{contest, strength};
 use crate::days::day06::elf_on_a_shelf;
 use crate::days::day07::{bake, cookies};
-use crate::days::day08::{weight, drop};
+use crate::days::day08::{drop, weight};
 use crate::days::day11::red_pixels;
 use crate::days::day12::{load_packet, store_packet, ulids_to_uuids};
 use crate::days::day_minus_one::make_error;
@@ -17,7 +17,6 @@ async fn hello_world() -> &'static str {
 }
 
 pub fn create_api_router(shared_state: AppState) -> Router {
-
     let day_minus_one = Router::new().route("/error", get(make_error));
     let day_one = Router::new().route("/*nums", get(exclusive_cube));
     let day_four = Router::new()
