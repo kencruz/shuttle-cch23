@@ -7,6 +7,7 @@ use crate::day04::{contest, strength};
 use crate::day06::elf_on_a_shelf;
 use crate::day07::{bake, cookies};
 use crate::day08::{drop, weight};
+use crate::day11::red_pixels;
 use crate::day_minus_one::make_error;
 
 async fn hello_world() -> &'static str {
@@ -27,7 +28,7 @@ pub fn create_api_router() -> Router {
         .route("/weight/:num", get(weight))
         .route("/drop/:num", get(drop));
     let day_eleven = Router::new()
-        .route("/", get(hello_world))
+        .route("/red_pixels", post(red_pixels))
         .nest_service("/assets", ServeDir::new("assets"));
 
     Router::new()
