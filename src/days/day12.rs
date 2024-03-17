@@ -2,7 +2,7 @@ use std::time::SystemTime;
 use std::collections::HashMap;
 
 use axum::extract::{Path, State};
-use crate::router::AppState;
+use crate::types::AppState;
 
 pub async fn store_packet(Path(params): Path<HashMap<String, String>>, State(state): State<AppState>) {
     let packet = params

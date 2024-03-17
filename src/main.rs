@@ -1,16 +1,13 @@
-mod day01;
-mod day04;
-mod day06;
-mod day07;
-mod day08;
-mod day11;
-mod day12;
-mod day_minus_one;
+use types::AppState;
+
+mod days;
 mod router;
+mod types;
 
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
-    let router = router::create_api_router();
+    let shared_state = AppState::new();
+    let router = router::create_api_router(shared_state);
 
     Ok(router.into())
 }

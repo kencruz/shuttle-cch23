@@ -1,30 +1,22 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
 use axum::routing::post;
 use axum::{routing::get, Router};
 use tower_http::services::ServeDir;
 
-use crate::day01::exclusive_cube;
-use crate::day04::{contest, strength};
-use crate::day06::elf_on_a_shelf;
-use crate::day07::{bake, cookies};
-use crate::day08::{drop, weight};
-use crate::day11::red_pixels;
-use crate::day12::{load_packet, store_packet};
-use crate::day_minus_one::make_error;
+use crate::days::day01::exclusive_cube;
+use crate::days::day04::{contest, strength};
+use crate::days::day06::elf_on_a_shelf;
+use crate::days::day07::{bake, cookies};
+use crate::days::day08::{weight, drop};
+use crate::days::day11::red_pixels;
+use crate::days::day12::{load_packet, store_packet};
+use crate::days::day_minus_one::make_error;
+use crate::types::AppState;
 
 async fn hello_world() -> &'static str {
     "Hello, world!"
 }
 
-#[derive(Clone)]
-pub struct AppState {
-    pub record_last_updated: Arc<Mutex<HashMap<String, u64>>>,
-}
-
-pub fn create_api_router() -> Router {
-    let shared_state = AppState{ record_last_updated: Arc::new(Mutex::new(HashMap::new()))};
+pub fn create_api_router(shared_state: AppState) -> Router {
 
     let day_minus_one = Router::new().route("/error", get(make_error));
     let day_one = Router::new().route("/*nums", get(exclusive_cube));
