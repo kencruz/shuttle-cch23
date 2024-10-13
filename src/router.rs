@@ -29,6 +29,7 @@ pub fn create_api_router(shared_state: AppState) -> Router {
         .route("/save/:packet", post(store_packet))
         .route("/load/:packet", get(load_packet))
         .route("/ulids", post(ulids_to_uuids))
+        .route("/ulids/:weekday", post(parse_ulids))
         .with_state(shared_state);
 
     Router::new()

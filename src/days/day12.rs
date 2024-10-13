@@ -1,13 +1,30 @@
-use std::collections::HashMap;
-use std::time::SystemTime;
-
 use crate::types::AppState;
 use axum::{
     extract::{self, Path, State},
     Json,
 };
+use chrono::{DateTime, Datelike, Utc};
+use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
+use std::{collections::HashMap, time::UNIX_EPOCH};
 use ulid::Ulid;
 use uuid::Builder;
+
+#[derive(Serialize)]
+pub struct ParseUlidsResponse {
+    #[serde(rename = "christmas eve")]
+    christmas_eve: u16,
+    weekday: u16,
+    #[serde(rename = "in the future")]
+    future: u16,
+    #[serde(rename = "LSB is 1")]
+    lsb_is_1: u16,
+}
+
+#[derive(Deserialize)]
+pub struct WeekdayParam {
+    weekday: u8,
+}
 
 pub async fn store_packet(
     Path(params): Path<HashMap<String, String>>,
@@ -62,6 +79,53 @@ pub async fn ulids_to_uuids(
             .rev()
             .collect::<Vec<String>>(),
     )
+}
+
+pub async fn parse_ulids(
+    Path(WeekdayParam { weekday }): Path<WeekdayParam>,
+    Json(payload): Json<Vec<String>>,
+) -> Json<ParseUlidsResponse> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs();
+
+    let target_weekday = chrono::Weekday::try_from(weekday)
+        .unwrap_or_else(|_| panic!("Invalid weekday: {}", weekday));
+
+    let counts = payload
+        .into_iter()
+        .filter_map(|s| Ulid::from_string(&s).ok())
+        .fold(
+            ParseUlidsResponse {
+                christmas_eve: 0,
+                weekday: 0,
+                future: 0,
+                lsb_is_1: 0,
+            },
+            |mut acc, ulid| {
+                let datetime: DateTime<Utc> = ulid.datetime().into();
+                if datetime.month() == 12 && datetime.day() == 24 {
+                    acc.christmas_eve += 1;
+                }
+
+                if ulid.to_bytes()[15] & 1 == 1 {
+                    acc.lsb_is_1 += 1;
+                }
+
+                if (ulid.timestamp_ms() / 1000) > now {
+                    acc.future += 1;
+                }
+
+                if datetime.weekday() == target_weekday {
+                    acc.weekday += 1;
+                }
+
+                acc
+            },
+        );
+
+    Json(counts)
 }
 
 fn ulid_to_uuid(s: &str) -> String {
